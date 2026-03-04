@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cafetería Aurora | Carrito (Entregable 2)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-100">
+  <header class="border-b border-zinc-800 bg-zinc-950/70 backdrop-blur">
+    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center">
+          <span class="text-amber-300 font-bold">CA</span>
+        </div>
+        <div>
+          <p class="font-semibold leading-4">Cafetería Pepito Los Palotes</p>
+          <p class="text-xs text-zinc-400">Tostado artesanal · Envíos en 24h</p>
+        </div>
+      </div>
+      <nav class="hidden md:flex items-center gap-6 text-sm text-zinc-300">
+        <a class="hover:text-white" href="#productos">Productos</a>
+        <a class="hover:text-white" href="#nosotros">Nosotros</a>
+        <a class="hover:text-white" href="#faq">FAQ</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-zinc-400">Cliente:</span>
+        <span id="clienteActual" class="text-sm font-semibold">Sin nombre</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-8">
+    <section class="grid gap-6 md:grid-cols-3">
+      <div class="md:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+        <h1 class="text-3xl md:text-4xl font-bold leading-tight">
+          Simulador de compra con carrito para la entrega 2 de CoderHouse
+        </h1>
+        <p class="mt-3 text-zinc-300 max-w-2xl">
+          Agrega productos, ajusta cantidades, aplica descuento y guarda tu carrito en <span class="font-semibold">localStorage</span>.
+        </p>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+        <h2 class="text-lg font-semibold">Datos del cliente</h2>
+        <p class="text-sm text-zinc-400 mt-1">Guarda el nombre para el resumen final.</p>
+
+        <form id="formCliente" class="mt-4 grid gap-3">
+          <input id="inputCliente" type="text" placeholder="Ej: Sebastián"
+                 class="w-full rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 outline-none focus:border-amber-400/50" />
+          <button type="submit"
+                  class="rounded-xl bg-amber-400 text-zinc-950 font-semibold px-4 py-3 hover:bg-amber-300">
+            Guardar nombre
+          </button>
+        </form>
+        <p id="msgCliente" class="mt-3 text-sm text-amber-200 min-h-[20px]"></p>
+      </div>
+    </section>
+
+    <section id="productos" class="mt-10">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold">Productos</h2>
+          <p class="text-zinc-400 text-sm">3 productos disponibles para agregar al carrito.</p>
+        </div>
+        <div class="text-sm text-zinc-400">Carrito: <span id="contadorItems" class="font-semibold text-zinc-100">0</span> items</div>
+      </div>
+
+      <div id="listaProductos" class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+
+    <section class="mt-10 grid gap-6 lg:grid-cols-3">
+      
+      <aside class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+        <h2 class="text-2xl font-bold">Carrito</h2>
+        <div id="listaCarrito" class="mt-4 grid gap-3"></div>
+
+        <div class="mt-4 border-t border-zinc-800 pt-4">
+          <div class="flex justify-between text-sm text-zinc-300">
+            <span>Total</span>
+            <span>$<span id="total">0</span></span>
+          </div>
+
+          <label class="mt-3 flex items-center gap-2 text-sm text-zinc-300">
+            <input id="checkDescuento" type="checkbox" class="h-4 w-4 accent-amber-400" />
+            Aplicar descuento 10%
+          </label>
+
+          <div class="mt-3 flex justify-between text-lg font-semibold">
+            <span>Total final</span>
+            <span>$<span id="totalFinal">0</span></span>
+          </div>
+
+          <div class="mt-4 grid gap-2">
+            <button id="btnGuardar" type="button"
+                    class="rounded-xl bg-zinc-100 text-zinc-950 font-semibold px-4 py-3 hover:bg-white">
+              Guardar carrito
+            </button>
+            <button id="btnVaciar" type="button"
+                    class="rounded-xl bg-rose-500 text-white font-semibold px-4 py-3 hover:bg-rose-400">
+              Vaciar carrito
+            </button>
+            <button id="btnFinalizar" type="button"
+                    class="rounded-xl border border-zinc-700 bg-transparent text-zinc-100 font-semibold px-4 py-3 hover:bg-zinc-950/60">
+              Finalizar compra
+            </button>
+          </div>
+
+          <p id="msg" class="mt-3 text-sm text-amber-200 min-h-[20px]"></p>
+          <div id="resumen" class="mt-3 text-sm text-zinc-200 rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 min-h-[28px]"></div>
+        </div>
+      </aside>
+      
+      <div class="lg:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6" id="nosotros">
+        <h2 class="text-2xl font-bold">Nosotros</h2>
+        <p class="mt-2 text-zinc-300">
+          Somos una cafetería pequeña que trabaja con lotes frescos y recetas simples. Este sitio es un simulador para practicar
+          interacción con el DOM, manejo de eventos y almacenamiento local.
+        </p>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+            <p class="font-semibold">Tostado fresco</p>
+            <p class="text-sm text-zinc-400 mt-1">Rotación semanal.</p>
+          </div>
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+            <p class="font-semibold">Calidad</p>
+            <p class="text-sm text-zinc-400 mt-1">Control de molienda.</p>
+          </div>
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+            <p class="font-semibold">Envíos</p>
+            <p class="text-sm text-zinc-400 mt-1">Rápidos y seguros.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="mt-10 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
+      <h2 class="text-2xl font-bold">FAQ</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+          <p class="font-semibold">¿Se guardan los productos?</p>
+          <p class="text-sm text-zinc-400 mt-1">Sí</p>
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+          <p class="font-semibold">¿Puedo cambiar cantidades?</p>
+          <p class="text-sm text-zinc-400 mt-1">Sí, con los botones + y - dentro del carrito.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-zinc-800">
+    <div class="mx-auto max-w-6xl px-4 py-6 text-sm text-zinc-400 flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+      <span>Entrega N°2</span>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
