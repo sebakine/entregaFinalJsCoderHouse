@@ -1,308 +1,258 @@
-var STORAGE_CARRITO = "carrito_cafeteria_v2";
-var STORAGE_CLIENTE = "cliente_cafeteria_v2";
+const STORAGE_CARRITO = "coffeelink_carrito";
+const STORAGE_CLIENTE = "coffeelink_cliente";
 
-var productos = [
-  { id: 1, nombre: "Café Americano", precio: 2000, img: "img/close-up-view-brown-coffee-seeds-with-coffee-dark.jpg", desc: "Tu café clásico, suave y directo." },
-  { id: 2, nombre: "Café Latte", precio: 2500, img: "img/cup-cappuccino-with-latte-art-cinnamon-sticks-rustic-surface.jpg", desc: "Cremoso, con leche vaporizada." },
-  { id: 3, nombre: "Brownie", precio: 1800, img: "img/chocolate-brownie-cake-piece-stack-plate-homemade-pastries.jpg", desc: "Chocolate intenso, perfecto con café." }
-];
+let productos = [];
+let carrito = JSON.parse(localStorage.getItem(STORAGE_CARRITO)) || [];
+let cliente = localStorage.getItem(STORAGE_CLIENTE) || "Sebastián Felipe Muñoz Rivera";
 
-var carrito = [];
-var cliente = "";
+const listaProductos = document.querySelector("#listaProductos");
+const listaCarrito = document.querySelector("#listaCarrito");
+const totalSpan = document.querySelector("#total");
+const totalFinalSpan = document.querySelector("#totalFinal");
+const contadorItems = document.querySelector("#contadorItems");
+const checkDescuento = document.querySelector("#checkDescuento");
+const formCliente = document.querySelector("#formCliente");
+const inputCliente = document.querySelector("#inputCliente");
+const clienteActual = document.querySelector("#clienteActual");
+const btnVaciar = document.querySelector("#btnVaciar");
+const btnFinalizar = document.querySelector("#btnFinalizar");
 
-// DOM
-var listaProductos = document.querySelector("#listaProductos");
-var listaCarrito = document.querySelector("#listaCarrito");
-
-var totalSpan = document.querySelector("#total");
-var totalFinalSpan = document.querySelector("#totalFinal");
-var contadorItems = document.querySelector("#contadorItems");
-
-var checkDescuento = document.querySelector("#checkDescuento");
-var msg = document.querySelector("#msg");
-var resumen = document.querySelector("#resumen");
-
-var formCliente = document.querySelector("#formCliente");
-var inputCliente = document.querySelector("#inputCliente");
-var msgCliente = document.querySelector("#msgCliente");
-var clienteActual = document.querySelector("#clienteActual");
-
-var btnGuardar = document.querySelector("#btnGuardar");
-var btnVaciar = document.querySelector("#btnVaciar");
-var btnFinalizar = document.querySelector("#btnFinalizar");
-
-// mensajes
-function setMsg(texto) {
-  msg.textContent = texto;
-  if (texto !== "") {
-    setTimeout(function () { msg.textContent = ""; }, 2200);
-  }
-}
-
-function setMsgCliente(texto) {
-  msgCliente.textContent = texto;
-  if (texto !== "") {
-    setTimeout(function () { msgCliente.textContent = ""; }, 2200);
-  }
-}
-
-// lógica
-function buscarEnCarrito(idProducto) {
-  var encontrado = null;
-  for (var item of carrito) {
-    if (item.id === idProducto) {
-      encontrado = item;
+const inicializarApp = async () => {
+    inputCliente.value = cliente;
+    clienteActual.textContent = cliente;
+    
+    try {
+        const respuesta = await fetch("productos.json");
+        productos = await respuesta.json();
+        renderProductos();
+        actualizarUI();
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo cargar el catálogo de productos.',
+            background: '#18181b',
+            color: '#f4f4f5'
+        });
     }
-  }
-  return encontrado;
-}
+};
 
-function agregarAlCarrito(producto) {
-  var existe = buscarEnCarrito(producto.id);
+const guardarDatos = () => {
+    localStorage.setItem(STORAGE_CARRITO, JSON.stringify(carrito));
+    localStorage.setItem(STORAGE_CLIENTE, cliente);
+};
 
-  if (existe !== null) {
-    existe.cantidad = existe.cantidad + 1;
-  } else {
-    carrito.push({
-      id: producto.id,
-      nombre: producto.nombre,
-      precio: producto.precio,
-      cantidad: 1
+const mostrarToast = (mensaje, color) => {
+    Toastify({
+        text: mensaje,
+        duration: 2000,
+        gravity: "bottom",
+        position: "right",
+        style: { background: color, color: "#09090b", borderRadius: "8px", fontWeight: "600" }
+    }).showToast();
+};
+
+const agregarAlCarrito = (idProducto) => {
+    const producto = productos.find(p => p.id === idProducto);
+    const existe = carrito.find(item => item.id === idProducto);
+
+    if (existe) {
+        existe.cantidad += 1;
+    } else {
+        carrito.push({ ...producto, cantidad: 1 });
+    }
+    
+    mostrarToast(`${producto.nombre} agregado`, "#fbbf24");
+    actualizarUI();
+};
+
+const eliminarDelCarrito = (idProducto) => {
+    carrito = carrito.filter(item => item.id !== idProducto);
+    mostrarToast("Producto eliminado", "#f43f5e");
+    actualizarUI();
+};
+
+const modificarCantidad = (idProducto, delta) => {
+    const item = carrito.find(i => i.id === idProducto);
+    if (item) {
+        item.cantidad += delta;
+        if (item.cantidad < 1) {
+            eliminarDelCarrito(idProducto);
+        } else {
+            actualizarUI();
+        }
+    }
+};
+
+const calcularTotales = () => {
+    const subtotal = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
+    const totalFinal = checkDescuento.checked ? subtotal * 0.9 : subtotal;
+    const cantidadItems = carrito.reduce((acc, item) => acc + item.cantidad, 0);
+    
+    return { subtotal, totalFinal, cantidadItems };
+};
+
+const actualizarUI = () => {
+    guardarDatos();
+    renderCarrito();
+    
+    const totales = calcularTotales();
+    totalSpan.textContent = totales.subtotal;
+    totalFinalSpan.textContent = Math.round(totales.totalFinal);
+    contadorItems.textContent = totales.cantidadItems;
+};
+
+const renderProductos = () => {
+    listaProductos.innerHTML = "";
+    productos.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "rounded-2xl border border-zinc-800 bg-zinc-900/40 overflow-hidden flex flex-col";
+        div.innerHTML = `
+            <img src="${p.img}" alt="${p.nombre}" class="h-44 w-full object-cover" onerror="this.src='https://via.placeholder.com/300x200?text=Sin+Imagen'"/>
+            <div class="p-4 flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold">${p.nombre}</h3>
+                    <p class="text-sm text-zinc-400 mt-1">${p.desc}</p>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <span class="font-semibold text-lg">$${p.precio}</span>
+                    <button id="add_${p.id}" class="rounded-xl bg-amber-400 text-zinc-950 font-semibold px-4 py-2 hover:bg-amber-300 transition-colors">
+                        Agregar
+                    </button>
+                </div>
+            </div>
+        `;
+        listaProductos.appendChild(div);
+        document.querySelector(`#add_${p.id}`).addEventListener("click", () => agregarAlCarrito(p.id));
     });
-  }
-}
+};
 
-function eliminarDelCarrito(idProducto) {
-  carrito = carrito.filter(function (item) {
-    return item.id !== idProducto;
-  });
-}
+const renderCarrito = () => {
+    listaCarrito.innerHTML = "";
+    if (carrito.length === 0) {
+        listaCarrito.innerHTML = '<p class="text-sm text-zinc-400 py-4">La orden está vacía.</p>';
+        return;
+    }
 
-function cambiarCantidad(idProducto, delta) {
-  var item = buscarEnCarrito(idProducto);
-  if (item === null) return;
+    carrito.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 flex justify-between items-center";
+        div.innerHTML = `
+            <div class="flex-1">
+                <p class="font-semibold text-sm leading-5">${item.nombre}</p>
+                <p class="text-xs text-zinc-400 mt-1">$${item.precio} x ${item.cantidad} = <span class="text-zinc-200 font-medium">$${item.precio * item.cantidad}</span></p>
+            </div>
+            <div class="flex items-center gap-2 ml-2">
+                <button id="dec_${item.id}" class="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 font-bold text-zinc-300">-</button>
+                <span class="w-4 text-center text-sm font-semibold">${item.cantidad}</span>
+                <button id="inc_${item.id}" class="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 font-bold text-zinc-300">+</button>
+                <button id="del_${item.id}" class="h-8 w-8 rounded-lg bg-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center ml-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                </button>
+            </div>
+        `;
+        listaCarrito.appendChild(div);
 
-  item.cantidad = item.cantidad + delta;
-  if (item.cantidad < 1) item.cantidad = 1;
-}
-
-function calcularTotalCarrito() {
-  var total = carrito.reduce(function (acum, item) {
-    return acum + (item.precio * item.cantidad);
-  }, 0);
-
-  return total;
-}
-
-function aplicarDescuento(total, activo) {
-  if (activo === true) return total * 0.9;
-  return total;
-}
-
-// render
-function renderProductos() {
-  listaProductos.innerHTML = "";
-
-  productos.forEach(function (p) {
-    var card = document.createElement("div");
-    card.className = "rounded-2xl border border-zinc-800 bg-zinc-900/40 overflow-hidden";
-
-    card.innerHTML =
-      '<img src="' + p.img + '" alt="' + p.nombre + '" class="h-44 w-full object-cover" />' +
-      '<div class="p-4">' +
-        '<h3 class="text-lg font-semibold">' + p.nombre + '</h3>' +
-        '<p class="text-sm text-zinc-400 mt-1">' + p.desc + '</p>' +
-        '<div class="mt-4 flex items-center justify-between">' +
-          '<span class="font-semibold">$' + p.precio + '</span>' +
-          '<button type="button" id="add_' + p.id + '" class="rounded-xl bg-amber-400 text-zinc-950 font-semibold px-4 py-2 hover:bg-amber-300">Agregar</button>' +
-        '</div>' +
-      '</div>';
-
-    listaProductos.appendChild(card);
-  });
-
-  productos.forEach(function (p) {
-    var btn = document.querySelector("#add_" + p.id);
-    btn.addEventListener("click", function () {
-      agregarAlCarrito(p);
-      renderCarrito();
-      renderTotales();
-      guardarCarrito();
-      setMsg("Agregado al carrito.");
+        document.querySelector(`#dec_${item.id}`).addEventListener("click", () => modificarCantidad(item.id, -1));
+        document.querySelector(`#inc_${item.id}`).addEventListener("click", () => modificarCantidad(item.id, 1));
+        document.querySelector(`#del_${item.id}`).addEventListener("click", () => eliminarDelCarrito(item.id));
     });
-  });
-}
+};
 
-function renderCarrito() {
-  listaCarrito.innerHTML = "";
-
-  if (carrito.length === 0) {
-    listaCarrito.innerHTML = '<p class="text-sm text-zinc-400">Tu carrito está vacío.</p>';
-    contadorItems.textContent = "0";
-    return;
-  }
-
-  var count = 0;
-
-  carrito.forEach(function (item) {
-    count = count + item.cantidad;
-
-    var row = document.createElement("div");
-    row.className = "rounded-xl border border-zinc-800 bg-zinc-950/40 p-3";
-
-    row.innerHTML =
-      '<div class="flex items-start justify-between gap-3">' +
-        '<div>' +
-          '<p class="font-semibold leading-5">' + item.nombre + '</p>' +
-          '<p class="text-xs text-zinc-400 mt-1">$' + item.precio + ' · Cantidad: ' + item.cantidad + '</p>' +
-          '<p class="text-xs text-zinc-400 mt-1">Subtotal: $' + (item.precio * item.cantidad) + '</p>' +
-        '</div>' +
-        '<button type="button" id="del_' + item.id + '" class="text-xs rounded-lg bg-rose-500 px-3 py-2 font-semibold hover:bg-rose-400">Eliminar</button>' +
-      '</div>' +
-      '<div class="mt-3 flex gap-2">' +
-        '<button type="button" id="dec_' + item.id + '" class="rounded-lg border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900">-</button>' +
-        '<button type="button" id="inc_' + item.id + '" class="rounded-lg border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900">+</button>' +
-      '</div>';
-
-    listaCarrito.appendChild(row);
-  });
-
-  contadorItems.textContent = String(count);
-
-  carrito.forEach(function (item) {
-    var btnInc = document.querySelector("#inc_" + item.id);
-    var btnDec = document.querySelector("#dec_" + item.id);
-    var btnDel = document.querySelector("#del_" + item.id);
-
-    btnInc.addEventListener("click", function () {
-      cambiarCantidad(item.id, 1);
-      renderCarrito();
-      renderTotales();
-      guardarCarrito();
-    });
-
-    btnDec.addEventListener("click", function () {
-      cambiarCantidad(item.id, -1);
-      renderCarrito();
-      renderTotales();
-      guardarCarrito();
-    });
-
-    btnDel.addEventListener("click", function () {
-      eliminarDelCarrito(item.id);
-      renderCarrito();
-      renderTotales();
-      guardarCarrito();
-      setMsg("Producto eliminado.");
-    });
-  });
-}
-
-function renderTotales() {
-  var total = calcularTotalCarrito();
-  totalSpan.textContent = String(total);
-
-  var totalFinal = aplicarDescuento(total, checkDescuento.checked);
-  totalFinalSpan.textContent = String(Math.round(totalFinal));
-}
-
-function renderResumen() {
-  if (carrito.length === 0) {
-    resumen.textContent = "No hay productos para finalizar.";
-    return;
-  }
-
-  var total = calcularTotalCarrito();
-  var totalFinal = aplicarDescuento(total, checkDescuento.checked);
-
-  var html = "";
-  html += "<strong>Resumen de compra</strong><br>";
-  html += "Cliente: " + (cliente === "" ? "Sin nombre" : cliente) + "<br><br>";
-
-  carrito.forEach(function (item) {
-    html += "- " + item.nombre + " (" + item.cantidad + "u) = $" + (item.precio * item.cantidad) + "<br>";
-  });
-
-  html += "<br>Total: $" + total + "<br>";
-  html += "Descuento: " + (checkDescuento.checked ? "Sí (10%)" : "No") + "<br>";
-  html += "<strong>Total final: $" + String(Math.round(totalFinal)) + "</strong>";
-
-  resumen.innerHTML = html;
-}
-
-// storage
-function guardarCarrito() {
-  localStorage.setItem(STORAGE_CARRITO, JSON.stringify(carrito));
-}
-
-function cargarCarrito() {
-  var data = localStorage.getItem(STORAGE_CARRITO);
-  if (data === null) {
-    carrito = [];
-    return;
-  }
-  carrito = JSON.parse(data);
-}
-
-function guardarCliente() {
-  localStorage.setItem(STORAGE_CLIENTE, cliente);
-}
-
-function cargarCliente() {
-  var data = localStorage.getItem(STORAGE_CLIENTE);
-  if (data === null) {
-    cliente = "";
-    return;
-  }
-  cliente = data;
-}
-
-// eventos
-formCliente.addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  var nombre = inputCliente.value.trim();
-
-  if (nombre === "" || nombre.length < 2) {
-    setMsgCliente("Nombre inválido (mínimo 2 caracteres).");
-    return;
-  }
-
-  cliente = nombre;
-  guardarCliente();
-  clienteActual.textContent = cliente;
-  inputCliente.value = "";
-  setMsgCliente("Nombre guardado.");
+formCliente.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const nombre = inputCliente.value.trim();
+    if (nombre.length >= 2) {
+        cliente = nombre;
+        clienteActual.textContent = cliente;
+        guardarDatos();
+        mostrarToast("Cliente actualizado", "#34d399");
+    }
 });
 
-checkDescuento.addEventListener("change", function () {
-  renderTotales();
+checkDescuento.addEventListener("change", actualizarUI);
+
+btnVaciar.addEventListener("click", () => {
+    if (carrito.length === 0) return;
+    
+    Swal.fire({
+        title: '¿Cancelar orden?',
+        text: "Se eliminarán todos los productos del carrito.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f43f5e',
+        cancelButtonColor: '#3f3f46',
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'Volver',
+        background: '#18181b',
+        color: '#f4f4f5'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            carrito = [];
+            checkDescuento.checked = false;
+            actualizarUI();
+            mostrarToast("Orden cancelada", "#f43f5e");
+        }
+    });
 });
 
-btnGuardar.addEventListener("click", function () {
-  guardarCarrito();
-  setMsg("Carrito guardado.");
+btnFinalizar.addEventListener("click", () => {
+    if (carrito.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Orden vacía',
+            text: 'Agrega productos al carrito antes de finalizar la venta.',
+            background: '#18181b',
+            color: '#f4f4f5',
+            confirmButtonColor: '#fbbf24'
+        });
+        return;
+    }
+
+    const totales = calcularTotales();
+    let resumenHtml = `<div class="text-left text-sm space-y-2 mt-4"><p><strong>Cliente:</strong> ${cliente}</p><ul class="list-disc pl-5">`;
+    carrito.forEach(item => resumenHtml += `<li>${item.cantidad}x ${item.nombre} ($${item.precio * item.cantidad})</li>`);
+    resumenHtml += `</ul><hr class="border-zinc-700 my-2"><p class="text-lg"><strong>Total a pagar: $${Math.round(totales.totalFinal)}</strong></p></div>`;
+
+    Swal.fire({
+        title: 'Confirmar Venta',
+        html: resumenHtml,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#fbbf24',
+        cancelButtonColor: '#3f3f46',
+        confirmButtonText: 'Aprobar Pago',
+        cancelButtonText: 'Modificar',
+        background: '#18181b',
+        color: '#f4f4f5'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Procesando pago...',
+                html: 'Por favor espere un momento.',
+                allowOutsideClick: false,
+                background: '#18181b',
+                color: '#f4f4f5',
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            setTimeout(() => {
+                Swal.fire({
+                    title: '¡Venta Exitosa!',
+                    text: 'La orden ha sido procesada correctamente.',
+                    icon: 'success',
+                    background: '#18181b',
+                    color: '#f4f4f5',
+                    confirmButtonColor: '#fbbf24'
+                });
+                carrito = [];
+                checkDescuento.checked = false;
+                actualizarUI();
+            }, 2000);
+        }
+    });
 });
 
-btnVaciar.addEventListener("click", function () {
-  carrito = [];
-  guardarCarrito();
-  resumen.textContent = "";
-  renderCarrito();
-  renderTotales();
-  setMsg("Carrito vaciado.");
-});
-
-btnFinalizar.addEventListener("click", function () {
-  renderResumen();
-});
-
-// init
-cargarCliente();
-cargarCarrito();
-
-clienteActual.textContent = (cliente === "" ? "Sin nombre" : cliente);
-
-renderProductos();
-renderCarrito();
-renderTotales();
+document.addEventListener("DOMContentLoaded", inicializarApp);

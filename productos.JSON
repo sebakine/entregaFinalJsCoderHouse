@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "nombre": "Café Americano",
+    "precio": 2000,
+    "img": "img/close-up-view-brown-coffee-seeds-with-coffee-dark.jpg",
+    "desc": "Tu café clásico, suave y directo."
+  },
+  {
+    "id": 2,
+    "nombre": "Café Latte",
+    "precio": 2500,
+    "img": "img/cup-cappuccino-with-latte-art-cinnamon-sticks-rustic-surface.jpg",
+    "desc": "Cremoso, con leche vaporizada."
+  },
+  {
+    "id": 3,
+    "nombre": "Brownie",
+    "precio": 1800,
+    "img": "img/chocolate-brownie-cake-piece-stack-plate-homemade-pastries.jpg",
+    "desc": "Chocolate intenso, perfecto con café."
+  }
+]
